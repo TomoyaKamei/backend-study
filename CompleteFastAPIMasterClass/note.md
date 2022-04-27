@@ -251,12 +251,198 @@ def get_blog(id: int, response: Response):
 
 
 ### Lecture22. Adding a second router
-```python
-
-```
 
 
 ## Section6. Parameters
+
+### Lecture23. Section overview
+```python
+from fastapi import APIRouter
+
+router = APIRouter(
+    prefix='/blog',
+    tags=['blog'],
+)
+
+@router.post('/new')
+def create_blog():
+    pass
+```
+
+### Lecture24. Request body
+- fastapiではjsonからの変換にPydanticを使用する。また、この際に型変換やバリデーションが実施される。
+```python
+from fastapi import APIRouter
+from pydantic import BaseModel
+
+router = APIRouter(
+    prefix='/blog',
+    tags=['blog'],
+)
+
+class BlogModel(BaseModel):
+    title: str
+    content: str
+    published: Optional[bool]
+
+@router.post('/new')
+def create_blog(blog: BlogModel):
+    return {"data": blog}
+```
+
+### Lecture25. Path and Query parameters
+```python
+from fastapi import APIRouter
+from pydantic import BaseModel
+
+router = APIRouter(
+    prefix='/blog',
+    tags=['blog'],
+)
+
+class BlogModel(BaseModel):
+    title: str
+    content: str
+    published: Optional[bool]
+
+# この場合、最初に来るのがPostのRequest Parameter、次にPath Parameter、最後にQuery Parameterとなる。
+@router.post('/new/{id}')
+def create_blog(blog: BlogModel, id: int, version: int = 1):
+    return {
+        "data": blog,
+        "id": id,
+        "version": version
+    }
+```
+
+### Lecture26. Parameter metadata
+```python
+from fastapi import APIRouter
+from pydantic import BaseModel
+
+router = APIRouter(
+    prefix='/blog',
+    tags=['blog'],
+)
+
+class BlogModel(BaseModel):
+    title: str
+    content: str
+    published: Optional[bool]
+
+# この場合、最初に来るのがPostのRequest Parameter、次にPath Parameter、最後にQuery Parameterとなる。
+@router.post('/new/{id}')
+def create_blog(blog: BlogModel, id: int, version: int = 1):
+    return {
+        "data": blog,
+        "id": id,
+        "version": version
+    }
+
+# クエリパラメータに対するメタデータとして、Query()を使用する事で追加の情報を記入する事が出来る。
+# また、エイリアスやdepreciatedも使用できる。Query(alias="commentId", deprecated=True)
+@router.post('/new/{id}/comment')
+def create_comment(blog: BlogModel, id: int, comment_id: int = Query(None, title="Id of Comment", description="some description for comment_id", alias="commentId")):
+    return {
+        'blog': blog,
+        "id": id,
+        "commnt_id": comment_id
+    }
+
+```
+
+### Lecture27. Validator
+```python
+from fastapi import APIRouter
+from pydantic import BaseModel
+
+router = APIRouter(
+    prefix='/blog',
+    tags=['blog'],
+)
+
+class BlogModel(BaseModel):
+    title: str
+    content: str
+    published: Optional[bool]
+
+# この場合、最初に来るのがPostのRequest Parameter、次にPath Parameter、最後にQuery Parameterとなる。
+@router.post('/new/{id}')
+def create_blog(blog: BlogModel, id: int, version: int = 1):
+    return {
+        "data": blog,
+        "id": id,
+        "version": version
+    }
+
+# クエリパラメータのデフォルト値としてBodyを使用する事が出来る
+# 加えて、クエリパラメータのデフォルト値をなしにしたい場合はBody(...)で実装出来る。
+@router.post('/new/{id}/comment')
+def create_comment(blog: BlogModel, id: int,
+ comment_id: int = Query(None, title="Id of Comment", description="some description for comment_id", alias="commentId"),
+ content: str = Body("hi how are you", min_length=10, max_length=20, regex="^[a-z\s]*$")):
+    return {
+        'blog': blog,
+        "id": id,
+        "comment_id": comment_id,
+        "comment": content
+    }
+
+```
+
+### Lecture28. Multiple values
+- 複数値を取得するのは、クエリパラメーターのみ可能である。
+```python
+from fastapi import APIRouter
+from pydantic import BaseModel
+
+router = APIRouter(
+    prefix='/blog',
+    tags=['blog'],
+)
+
+class BlogModel(BaseModel):
+    title: str
+    content: str
+    published: Optional[bool]
+
+# この場合、最初に来るのがPostのRequest Parameter、次にPath Parameter、最後にQuery Parameterとなる。
+@router.post('/new/{id}')
+def create_blog(blog: BlogModel, id: int, version: int = 1):
+    return {
+        "data": blog,
+        "id": id,
+        "version": version
+    }
+
+# クエリパラメータのデフォルト値としてBodyを使用する事が出来る
+# 加えて、クエリパラメータのデフォルト値をなしにしたい場合はBody(...)で実装出来る。
+@router.post('/new/{id}/{comment_id}')
+def create_comment(blog: BlogModel, id: int,
+ comment_title: int = Query(None, title="Title of Comment", description="some description for comment_title", alias="commentTitle"),
+ content: str = Body("hi how are you", min_length=10, max_length=20, regex="^[a-z\s]*$"),
+ version: Optional[List[str]] = Query(None),
+ comment_id: int = Path(..., gt=5, le=100)
+ ):
+    return {
+        'blog': blog,
+        "id": id,
+        "comment_id": comment_id,
+        "comment_title": comment_title,
+        "comment": content,
+        "version": version
+    }
+
+```
+
+### Lecture29. Number validators
+```python
+```
+
+### Lecture30. Complex subtypes
+```python
+```
+
 ## Section7. Database with SQLAlchemy
 ## Section8. Concepts
 ## Section9. Authentication
